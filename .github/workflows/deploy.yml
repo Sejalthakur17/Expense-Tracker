@@ -101,21 +101,9 @@ jobs:
           docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
 
           echo " Stop old containers"
-          docker stop backend || true
-          docker rm backend || true
-          docker stop frontend || true
-          docker rm frontend || true
+          docker-compose down || true
 
-          echo " Start backend"
-          docker run -d \
-            -p 5000:3000 \
-            --name backend \
-            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
+          echo " Start with docker-compose"
+          docker-compose up -d
 
-          echo " Start frontend"
-          docker run -d \
-            -p 80:80 \
-            --name frontend \
-            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
-
-          echo "Deployment Successful!"
+          echo " Deployment Successful!"
