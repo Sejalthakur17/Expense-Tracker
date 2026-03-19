@@ -1,0 +1,121 @@
+name: CI/CD → ECR → EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+  BACKEND_REPO: expense-backend
+  FRONTEND_REPO: expense-frontend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # Configure AWS
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    #  Ensure ECR repos exist
+    - name: Ensure Backend ECR exists
+      run: |
+        aws ecr describe-repositories --repository-names $BACKEND_REPO 2>/dev/null || \
+        aws ecr create-repository --repository-name $BACKEND_REPO
+
+    - name: Ensure Frontend ECR exists
+      run: |
+        aws ecr describe-repositories --repository-names $FRONTEND_REPO 2>/dev/null || \
+        aws ecr create-repository --repository-name $FRONTEND_REPO
+
+    #  Login to ECR
+    - name: Login to ECR
+      run: |
+        aws ecr get-login-password --region $AWS_REGION \
+        | docker login --username AWS --password-stdin \
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+
+    # Build Backend
+    - name: Build Backend Image
+      run: |
+        docker build -t $BACKEND_REPO -f backend/Dockerfile ./backend
+
+    #  Tag Backend
+    - name: Tag Backend Image
+      run: |
+        docker tag $BACKEND_REPO:latest \
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
+
+    # Push Backend
+    - name: Push Backend Image
+      run: |
+        docker push \
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
+
+    # Build Frontend
+    - name: Build Frontend Image
+      run: |
+        docker build -t $FRONTEND_REPO -f frontend/Dockerfile ./frontend
+
+    # Tag Frontend
+    - name: Tag Frontend Image
+      run: |
+        docker tag $FRONTEND_REPO:latest \
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
+
+    # Push Frontend
+    - name: Push Frontend Image
+      run: |
+        docker push \
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
+
+ 
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+
+          echo " Login to ECR"
+          aws ecr get-login-password --region $AWS_REGION \
+          | docker login --username AWS --password-stdin \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+          echo " Pull latest images"
+          docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
+          docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
+
+          echo " Stop old containers"
+          docker stop backend || true
+          docker rm backend || true
+          docker stop frontend || true
+          docker rm frontend || true
+
+          echo " Start backend"
+          docker run -d \
+            -p 5000:3000 \
+            --name backend \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:latest
+
+          echo " Start frontend"
+          docker run -d \
+            -p 80:80 \
+            --name frontend \
+            $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_REPO:latest
+
+          echo "Deployment Successful!"

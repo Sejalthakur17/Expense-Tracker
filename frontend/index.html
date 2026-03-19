@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2-Tier Expense Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+</head>
+<body>
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>
+                    <i class="fas fa-wallet"></i>
+                    Expense Tracker
+                </h1>
+            </div>
+            <div class="status-indicator" id="statusIndicator">
+                <span id="statusIcon">🔄</span>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar: Categories -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2><i class="fas fa-tags"></i> Categories</h2>
+                    <button class="btn-icon" id="addCategoryBtn" title="Add new category">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="categories-scroll" id="categoriesList">
+                    <!-- Dynamic categories loaded by JS -->
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <!-- Add Expense Form -->
+                <section class="form-section card">
+                    <div class="section-header">
+                        <h3><i class="fas fa-plus-circle"></i> Add New Expense</h3>
+                    </div>
+                    <form id="expenseForm">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="description">Description *</label>
+                                <input 
+                                    type="text" 
+                                    id="description" 
+                                    name="description" 
+                                    placeholder="Coffee at Starbucks, Gas station, etc."
+                                    required 
+                                    maxlength="100"
+                                >
+                            </div>
+                            <div class="input-group">
+                               <label for="amount">Amount (₹) *</label>
+                               <input 
+                                   type="number" 
+                                   id="amount" 
+                                   name="amount" 
+                                   step="0.01" 
+                                   min="0" 
+                                   placeholder="450.00"
+                                   required
+                              >
+                            </div>
+                            <div class="input-group">
+                                <label for="categorySelect">Category *</label>
+                                <select id="categorySelect" name="category" required>
+                                    <option value="">Loading categories...</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="date">Date</label>
+                                <input 
+                                    type="date" 
+                                    id="date" 
+                                    name="date"
+                                    max=""
+                                >
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <i class="fas fa-save"></i> Add Expense
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Stats Dashboard -->
+                <section class="stats-section card">
+                    <h3 class="section-title"><i class="fas fa-chart-bar"></i> Quick Stats</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalSpent">₹0.00</div>
+                            <div class="stat-label">Total Spent</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="expenseCount">0</div>
+                            <div class="stat-label">Total Expenses</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="categoryCount">0</div>
+                            <div class="stat-label">Active Categories</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card" style="padding:20px;">
+                <h3><i class="fas fa-chart-pie"></i> Expense Chart</h3>
+                   <canvas id="expenseChart"></canvas>
+                </section>
+
+                <!-- Expenses List -->
+                <section class="expenses-section card">
+                    <div class="section-header">
+                        <h3 class="section-title"><i class="fas fa-list"></i> Recent Expenses</h3>
+                        <button id="clearAllBtn" class="btn btn-danger" style="display: none;">
+                            <i class="fas fa-trash-alt"></i> Clear All Expenses
+                        </button>
+                    </div>
+                    <div class="expenses-container" id="expensesContainer">
+                        <!-- Dynamic expenses loaded by JS -->
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Notifications Container -->
+    <div class="notifications-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
